@@ -37,7 +37,7 @@ section .text
 main:
 
     init:
-        cmp [esp], 1                                     ; check if argc is greater the 1
+        cmp byte [esp], 1                                     ; check if argc is greater the 1
         jg modify_stack                                     ; we need to change the stack size
         
         mov ecx, op_stack                                   ; set ecx to point the top of the op_stack
@@ -80,7 +80,7 @@ main:
 
 
     case_operand:
-        mov edx, 0
+        mov edx, 0                                          
         mov ebx, 1
   
 
@@ -105,10 +105,13 @@ main:
             call malloc
             add esp, 4			                                ; clean up stack after call
             mov [ecx], eax                                      ; set current free space to new allocated space
-            mov byte [[ecx]], binary_value                      ; set first byte in link
-            mov byte [ecx]+1, binary_value+1                  ; set second byte in link
-            mov byte [ecx]+2, binary_value+2                  ; set third byte in link
-            mov [ecx]+3, 0                                 ; set next link to be NULL
+            mov byte [eax], binary_value                      ; set first byte in link
+            inc eax
+            mov byte [eax], binary_value+1                  ; set second byte in link
+            inc eax
+            mov byte [eax], binary_value+2                  ; set third byte in link
+            inc eax
+            mov [eax], 0                                 ; set next link to be NULL
 
             add ecx, 4                                          ; move ecx to the next availible free space
             sub counter_stack, 1                                ; substract 1 free space from number of availible free space in stack
@@ -132,10 +135,13 @@ main:
             add esp, 4			                                ; clean up stack after call
             mov ebx, [ecx-4]                                    ; temp
             mov [ecx-4], eax                                    ; set current free space to new allocated space
-            mov byte [ecx-4], binary_value                      ; set first byte in link
-            mov byte [ecx-4]+1, binary_value+1                  ; set second byte in link
-            mov byte [ecx-4]+2, binary_value+2                  ; set third byte in link
-            mov [ecx-4]+3, ebx                                 ; set next link to be to be the previous link in [ecx]
+            mov byte [eax], binary_value                        ; set first byte in link
+            inc eax
+            mov byte [eax], binary_value+1                  ; set second byte in link
+            inc eax
+            mov byte [eax], binary_value+2                  ; set third byte in link
+            inc eax
+            mov [eax], ebx                                 ; set next link to be to be the previous link in [ecx]
         
             and binary_value, 0
 
@@ -147,8 +153,9 @@ main:
             push ebp                                                                               
             mov ebp, esp
             pushad
-
-            mov ecx, buffer+[eax]
+            
+            mov ecx, buffer
+            add ecx, edx
             mov eax, 2                                                              
             mov edx, 1
             jmp looping
@@ -187,7 +194,8 @@ main:
                 jmp looping
 
             finish_1:
-                shr [binary_value], 3*[ebx]
+                mul ebx, 3
+                shr [binary_value], ebx
                 jmp finish_2
 
             finish_2:
