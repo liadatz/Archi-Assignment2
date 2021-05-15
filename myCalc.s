@@ -54,7 +54,9 @@ main:
         ;cmp byte [esp], 1                                   ; check if argc is greater the 1
         ;jg modify_stack                                     ; we need to change the stack size
         push 5                                              ; argument for malloc func
+        startFunction
         call malloc
+        endFunction
         add esp, 4                                          ; clean stack after call
         mov dword [op_stack], eax                                      
 
@@ -81,12 +83,14 @@ main:
         startFunction
         push prompt_string			                        ; call printf with 2 arguments -  
 		push format_string			                        ; pointer to prompt message and pointer to format string
-		call printf
-        add esp, 8					                        ; clean up stack after call
+        startFunction
+        call printf
+        endFunction        add esp, 8					                        ; clean up stack after call
 
         push dword buffer                                   ; input buffer
+        startFunction
         call gets
-        add esp, 4                                          ; remove 1 push from stuck
+        endFunction        add esp, 4                                          ; remove 1 push from stuck
 
         cmp byte [buffer], 48                               ; check if the input greater than '0'
 	    jge is_number				                        ; if so jump to 'is_number' label
@@ -130,8 +134,9 @@ main:
             je stack_overflow                                ; if stack is full prompt error message
             push ecx
             push 7                                           ; push size of link in bytes
+            startFunction
             call malloc
-            add esp, 4			                             ; clean up stack after call
+            endFunction            add esp, 4			                             ; clean up stack after call
             pop ecx
             push edx
             mov [ecx], eax                                   ; set current free space to new allocated space
@@ -157,14 +162,16 @@ main:
             stack_overflow:
                 push overflow_string			             ; call printf with 2 arguments -  
                 push format_string			                 ; pointer to prompt message and pointer to format string
+                startFunction
                 call printf
-                add esp, 8			                         ; clean up stack after call
+                endFunction                add esp, 8			                         ; clean up stack after call
                 jmp start_loop
             
         add_link:
             push 7                                           ; push size of link in bytes
+            startFunction
             call malloc
-            add esp, 4			                             ; clean up stack after call
+            endFunction            add esp, 4			                             ; clean up stack after call
             push edx
             mov ebx, [ecx-4]                                 ; save previous link
             mov [ecx-4], eax                                 ; set current free space to new allocated space
@@ -270,8 +277,9 @@ main:
         case_quit:
             push counter			 ; call printf with 2 arguments -  
             push format_int			 ; pointer to prompt message and pointer to format string
+            tartFunction
             call printf
-            add esp, 8			     ; clean up stack after call
+            endFunction            add esp, 8			     ; clean up stack after call
 
         case_addition:
 
@@ -306,8 +314,9 @@ main:
             jz start_loop                                   
 
         print:
+            startFunction
             call printf
-            add esp, 8
+            endFunction            add esp, 8
             dec edx
             jmp start_print
 
