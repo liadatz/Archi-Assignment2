@@ -5,10 +5,12 @@ section .data                                               ; we define (global)
     counter: dd 0                                           ; 4bytes counter- counts the number of operations.
     op_stack: dd 0                                          ; initalize an empty pointer
     binary_value: dd 0                                      ; 16 zero bits that will be modified to represent the binary value of an 4 chars operand
+    debug_flag: db 1
 
 section	.rodata					                            ; we define (global) read-only variables in .rodata section
 	format_string: db "%s", 10, 0	                        ; format string for printf func
     format_int: db "%d", 10, 0	                            ; format int for printf func
+    format_oct: db "%o", 0                                  ; format for octal number
     prompt_string: db "calc: ", 0                           ; format for prompt message
     overflow_string: db "Error: Operand Stack Overflow",10,0; format for overflow message
 
@@ -16,6 +18,7 @@ section	.rodata					                            ; we define (global) read-only v
 section .bss						                        ; we define (global) uninitialized variables in .bss section
     buffer: resb 80                                         ; 80bytes buffer- stores input from user (max length of input is 80 chars)
     
+
 
 section .text
   align 16
@@ -92,7 +95,8 @@ main:
 
         operand_loop:
             cmp byte [buffer+edx], 10                       ; check if current char in '\n' (indicate no char left to read)
-            jz start_loop                                   ; if so, go back to the start of the loop
+            jz finish_operand_loop
+
             jmp binary_convertor                            ; otherwise, convert current string to binary 
 
         operand_loop_continue:
@@ -100,6 +104,11 @@ main:
             cmp ebx, 1                                      ; check if first link flag is on
             je add_first_link                               ; if so, jump to add first link
             jmp add_link                                    ; otherwise, jump to add link
+        
+        finish_operand_loop:
+            cmp byte [debug_flag], 1
+            jz print_number
+            jmp start_loop
         
 
 
@@ -149,10 +158,10 @@ main:
             mov byte [eax], dl                               ; set first byte in link
             inc eax
             mov dl, [binary_value+1]
-            mov byte [eax], dl                                 ; set second byte in link
+            mov byte [eax], dl                               ; set second byte in link
             inc eax
             mov dl, [binary_value+2]
-            mov byte [eax], dl                   ; set third byte in link
+            mov byte [eax], dl                               ; set third byte in link
             inc eax
             mov [eax], ebx                                   ; set next link to be to be the previous link in [ecx]
         
@@ -259,6 +268,39 @@ main:
         case_and:
 
         case_n:
+
+    print_number:
+        mov edx, 0
+        mov eax, [ecx-4]        ; eax = address on heap
+        cmp byte [eax], 0 
+        jnz print_loop
+
+        print_loop:
+            cmp byte [eax], 0
+            jz start_print
+            mov dword ebx, [eax]    ; ebx = 4bytes from the start of the link
+            shr ebx, 8              ; ebx contains only data 
+            push ebx
+            push format_oct
+            inc edx
+            add eax, 3              ; set eax to next link
+            jmp print_loop
+
+        start_print:
+            cmp edx, 0
+            jnz print
+            jz start_loop                                   
+
+        print:
+            call printf
+            add esp, 8
+            dec edx
+            jmp start_print
+
+
+
+
+
 
         ;case_multiplication:
 
