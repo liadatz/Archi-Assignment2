@@ -111,7 +111,6 @@ main:
             jmp start_loop
         
 
-
         add_first_link:
             cmp dword [counter_stack], 0                     ; check for availible free space in stack
             je stack_overflow                                ; if stack is full prompt error message
