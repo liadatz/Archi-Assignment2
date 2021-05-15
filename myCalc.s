@@ -1,9 +1,19 @@
+%macro startFunction
+    push ebp
+    mov ebp, esp
+    pushad
+%endmacro
 
+%macro endFunction
+    popad
+    mov esp, ebp
+    pop ebp
+%endmacro
 
 section .data                                               ; we define (global) initialized variables in .data section
     counter_stack: dd 5                                     ; 4bytes stack counter- counts the number of free spaces
     counter: dd 0                                           ; 4bytes counter- counts the number of operations.
-    op_stack: dd 0                                          ; initalize an empty pointer
+    op_stack: dd 1                                          ; initalize an empty pointer
     binary_value: dd 0                                      ; 16 zero bits that will be modified to represent the binary value of an 4 chars operand
     debug_flag: db 1
 
@@ -17,6 +27,7 @@ section	.rodata					                            ; we define (global) read-only v
 
 section .bss						                        ; we define (global) uninitialized variables in .bss section
     buffer: resb 80                                         ; 80bytes buffer- stores input from user (max length of input is 80 chars)
+                                             
     
 
 
@@ -40,12 +51,12 @@ section .text
 main:
 
     init:
-        cmp byte [esp], 1                                   ; check if argc is greater the 1
-        jg modify_stack                                     ; we need to change the stack size
+        ;cmp byte [esp], 1                                   ; check if argc is greater the 1
+        ;jg modify_stack                                     ; we need to change the stack size
         push 5                                              ; argument for malloc func
         call malloc
         add esp, 4                                          ; clean stack after call
-        mov [op_stack], eax                                      
+        mov dword [op_stack], eax                                      
 
         mov ecx, [op_stack]                                   ; set ecx to point the top of the op_stack
         jmp start_loop
@@ -55,7 +66,9 @@ main:
         mov ebx, 4
         mul ebx
         push eax
+        startFunction
         call malloc
+        endFunction
         add esp, 4			                                ; clean up stack after call
         mov [op_stack], eax
         mov eax, [esp + 8]
@@ -65,6 +78,7 @@ main:
     
 
     start_loop:
+        startFunction
         push prompt_string			                        ; call printf with 2 arguments -  
 		push format_string			                        ; pointer to prompt message and pointer to format string
 		call printf
@@ -115,10 +129,11 @@ main:
         add_first_link:
             cmp dword [counter_stack], 0                     ; check for availible free space in stack
             je stack_overflow                                ; if stack is full prompt error message
-
+            push ecx
             push 7                                           ; push size of link in bytes
             call malloc
             add esp, 4			                             ; clean up stack after call
+            pop ecx
             push edx
             mov [ecx], eax                                   ; set current free space to new allocated space
             mov byte dl, [binary_value] 
@@ -137,7 +152,7 @@ main:
             mov ebx, 0                                       ; set first link flag to 0
             and dword [binary_value], 0                            ; reset binary value   
             pop edx
-
+            test:
             jmp operand_loop                                 ; jump to operand loop
 
             stack_overflow:
