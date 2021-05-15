@@ -1,12 +1,12 @@
 
 
-section .data                                              ; we define (global) initialized variables in .data section
+section .data                                               ; we define (global) initialized variables in .data section
     counter_stack: dd 5                                     ; 4bytes stack counter- counts the number of free spaces
     counter: dd 0                                           ; 4bytes counter- counts the number of operations.
     op_stack: TIMES 5 dd 0                                  ; initalize array of pointers in the size of 5 (default)
     binary_value: TIMES 3 db 0                              ; 12 zero bits that will be modified to represent the binary value of an 4 chars operand
 
-section	.rodata					                        ; we define (global) read-only variables in .rodata section
+section	.rodata					                            ; we define (global) read-only variables in .rodata section
 	format_string: db "%s", 10, 0	                        ; format string for printf func
     format_int: db "%d", 10, 0	                            ; format int for printf func
     prompt_string: db "calc: ", 0                           ; format for prompt message
@@ -76,7 +76,7 @@ main:
         cmp byte [buffer], 57                               ; check if the input is lesser than '9'
         jle case_operand                                    ; if so, the input first char is a number, and we want to deal with the it as a operand
         
-      jmp case_operator                                   ; if not, then the input is an operator
+      jmp case_operator                                     ; if not, then the input is an operator
 
 
     case_operand:
