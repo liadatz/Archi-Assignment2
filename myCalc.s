@@ -1,10 +1,10 @@
-%macro startFunction
+%macro startFunction 0
     push ebp
     mov ebp, esp
     pushad
 %endmacro
 
-%macro endFunction
+%macro endFunction 0
     popad
     mov esp, ebp
     pop ebp
@@ -85,12 +85,14 @@ main:
 		push format_string			                        ; pointer to prompt message and pointer to format string
         startFunction
         call printf
-        endFunction        add esp, 8					                        ; clean up stack after call
+        endFunction        
+        add esp, 8					                        ; clean up stack after call
 
         push dword buffer                                   ; input buffer
         startFunction
         call gets
-        endFunction        add esp, 4                                          ; remove 1 push from stuck
+        endFunction        
+        add esp, 4                                          ; remove 1 push from stuck
 
         cmp byte [buffer], 48                               ; check if the input greater than '0'
 	    jge is_number				                        ; if so jump to 'is_number' label
@@ -136,7 +138,8 @@ main:
             push 7                                           ; push size of link in bytes
             startFunction
             call malloc
-            endFunction            add esp, 4			                             ; clean up stack after call
+            endFunction            
+            add esp, 4			                             ; clean up stack after call
             pop ecx
             push edx
             mov [ecx], eax                                   ; set current free space to new allocated space
@@ -164,14 +167,16 @@ main:
                 push format_string			                 ; pointer to prompt message and pointer to format string
                 startFunction
                 call printf
-                endFunction                add esp, 8			                         ; clean up stack after call
+                endFunction                
+                add esp, 8			                         ; clean up stack after call
                 jmp start_loop
             
         add_link:
             push 7                                           ; push size of link in bytes
             startFunction
             call malloc
-            endFunction            add esp, 4			                             ; clean up stack after call
+            endFunction            
+            add esp, 4			                             ; clean up stack after call
             push edx
             mov ebx, [ecx-4]                                 ; save previous link
             mov [ecx-4], eax                                 ; set current free space to new allocated space
@@ -279,7 +284,8 @@ main:
             push format_int			 ; pointer to prompt message and pointer to format string
             tartFunction
             call printf
-            endFunction            add esp, 8			     ; clean up stack after call
+            endFunction            
+            add esp, 8			     ; clean up stack after call
 
         case_addition:
 
@@ -316,7 +322,8 @@ main:
         print:
             startFunction
             call printf
-            endFunction            add esp, 8
+            endFunction            
+            add esp, 8
             dec edx
             jmp start_print
 
