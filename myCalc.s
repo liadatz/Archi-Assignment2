@@ -1,10 +1,10 @@
-%macro startFunction
+%macro startFunction 0
     push ebp
     mov ebp, esp
     pushad
 %endmacro
 
-%macro endFunction
+%macro endFunction 0
     popad
     mov esp, ebp
     pop ebp
