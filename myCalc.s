@@ -80,7 +80,6 @@ main:
     
 
     start_loop:
-        startFunction
         push prompt_string			                        ; call printf with 2 arguments -  
 		push format_string			                        ; pointer to prompt message and pointer to format string
         startFunction
@@ -282,7 +281,7 @@ main:
         case_quit:
             push counter			 ; call printf with 2 arguments -  
             push format_int			 ; pointer to prompt message and pointer to format string
-            tartFunction
+            startFunction
             call printf
             endFunction            
             add esp, 8			     ; clean up stack after call
