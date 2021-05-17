@@ -53,11 +53,9 @@ main:
     init:
         ;cmp byte [esp], 1                                   ; check if argc is greater the 1
         ;jg modify_stack                                     ; we need to change the stack size
-        push 5                                              ; argument for malloc func
-        startFunction
+        push 5
         call malloc
-        endFunction
-        add esp, 4                                          ; clean stack after call
+        add esp, 4
         mov dword [op_stack], eax                                      
 
         mov ecx, [op_stack]                                   ; set ecx to point the top of the op_stack
@@ -67,11 +65,11 @@ main:
         mov eax, [esp + 8]
         mov ebx, 4
         mul ebx
+        ;startFunction
         push eax
-        startFunction
         call malloc
-        endFunction
-        add esp, 4			                                ; clean up stack after call
+        add esp, 4
+        ;endFunction
         mov [op_stack], eax
         mov eax, [esp + 8]
         mov [counter_stack], eax                            ; set number of free spaces in stack to argv[1]    
@@ -80,18 +78,18 @@ main:
     
 
     start_loop:
+        startFunction
         push prompt_string			                        ; call printf with 2 arguments -  
 		push format_string			                        ; pointer to prompt message and pointer to format string
-        startFunction
-        call printf
-        endFunction        
+        call printf        
         add esp, 8					                        ; clean up stack after call
+        endFunction
 
-        push dword buffer                                   ; input buffer
         startFunction
+        push dword buffer                                   ; input buffer
         call gets
-        endFunction        
         add esp, 4                                          ; remove 1 push from stuck
+        endFunction 
 
         cmp byte [buffer], 48                               ; check if the input greater than '0'
 	    jge is_number				                        ; if so jump to 'is_number' label
@@ -158,7 +156,6 @@ main:
             mov ebx, 0                                       ; set first link flag to 0
             and dword [binary_value], 0                            ; reset binary value   
             pop edx
-            test:
             jmp operand_loop                                 ; jump to operand loop
 
             stack_overflow:
@@ -208,7 +205,7 @@ main:
             mov edx, 1                                       ; set eax <- countes number of char that was converted so far
 
             looping:
-                mov ecx, 0                                   ; set ebx <-  num of bits written so far for one char (zero out of three)
+                mov ecx, 0                                   ; set ecx <-  num of bits written so far for one char (zero out of three)
                 sub byte [ebx], 48                           ; get numeric value of the char (according to ascii table)
 
             dec_to_binary:
@@ -233,6 +230,7 @@ main:
                 add eax, 5                                   ; add 5 to the offset to the bit that needs to be written
                 inc ebx                                      ; move the pointer to the next char out of the 4           
                 inc edx                                      ; increase the number of chars that were converted
+                test:
                 cmp byte [ebx], 10                           ; checks if the current char that need to be converted is '\n'
                 jz finish_1                                  ; if so jump to first part of finish converting
                 cmp edx, 5                                   ; checks if 4 chars were already converted
