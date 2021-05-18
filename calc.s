@@ -10,12 +10,22 @@
     pop ebp
 %endmacro
 
+%macro printing 3
+    pushad
+    push %3
+    push %2
+    push dword [%1]
+    call fprintf
+    add esp, 12
+    popad
+%endmacro
+
 section .data                                               ; we define (global) initialized variables in .data section
-    counter_stack: dd 5                                     ; 4bytes stack counter- counts the number of free spaces
+    stack_size: dd 5                                     ; 4bytes stack counter- counts the number of free spaces
     operator_counter: dd 0                                  ; 4bytes counter- counts the number of operations.
-    counter: dd 0                                           ; 4bytes counter
+    args_counter: dd 0                                           ; 4bytes counter
     op_stack: dd 1                                          ; initalize an empty pointer
-    debug_flag: db 1
+    debug_flag: db 0
     isFirstLink: db 1
 
 section	.rodata					                            ; we define (global) read-only variables in .rodata section
@@ -23,7 +33,8 @@ section	.rodata					                            ; we define (global) read-only v
     format_int: db "%d", 10, 0	                            ; format int for printf func
     format_oct: db "%o", 0                                  ; format for octal number
     prompt_string: db "calc: ", 0                           ; format for prompt message
-    overflow_string: db "Error: Operand Stack Overflow",10,0; format for overflow message
+    overflow_string: db "Error: Operand Stack Overflow",0   ; format for overflow message
+    max_args_string: db "Error: To much arguments entered",0
 
 
 section .bss						                        ; we define (global) uninitialized variables in .bss section
@@ -54,34 +65,64 @@ main:
     mov ebp, esp
 
     init:
-        cmp dword [ebp+8], 1                                   ; check if argc is greater the 1
-        jg modify_stack                                     ; we need to change the stack size
-        push 5
-        call malloc
-        add esp, 4
-        mov dword [op_stack], eax                                      
+        mov ebx, [ebp+8]
+        dec ebx
+        mov [args_counter], ebx                     ; set counter to number of 'extra args'
+        cmp byte [args_counter], 2
+        jg .error
 
-        mov ecx, [op_stack]                                   ; set ecx to point the top of the op_stack
-        jmp start_loop
+        mov dword ebx, [ebp+12]                             ; ebx <- argument array
+        add ebx, 4                                          ; ebx <- first 'extra argument'
+        .loop:
+            cmp dword [args_counter], 0
+            jz modify_stack
+            cmp byte [ebx], 45
+            jz .debug_on
+            jmp .set_stack_size
+
+        .debug_on:
+            or byte [debug_flag], 1                     ; turn on debug flag
+            sub byte [args_counter], 1                            ; reduce args counter by 1
+            add ebx, 4                                  ; move to next extra arg
+            jmp .loop                                   ; loop again
+
+        .set_stack_size:
+            push ebx                                    ; push arg to szatoi func
+            call szatoi                                 ; call function szatoi
+            add esp, 4                                  ; clean stack after func call
+            mov dword [stack_size], eax                 ; save return value as stack size
+            sub byte [args_counter], 1                            ; reduce args counter by 1
+            add ebx, 4                                  ; move to next extra arg
+            jmp .loop                                   ; loop again
+            
+        .error:
+            push max_args_string		                 ; call printf with 2 arguments -  
+            push format_string			                 ; pointer to prompt message and pointer to format string
+            call printf                
+            add esp, 8			                         ; clean up stack after call
+
+        .conitnue:
+            push 5
+            call malloc
+            add esp, 4
+            mov dword [op_stack], eax                                      
+
+            mov ecx, [op_stack]                                   ; set ecx to point the top of the op_stack
+            jmp start_loop
 
     modify_stack:
-        mov dword ebx, [ebp + 12]                              ; ebx <- string representing stack size (in octal)
-        mov dword ebx, [ebx + 4]
         push ecx
-        push ebx                                        ; push ebx as an argument
-        call szatoi                                     ; call function szatoi
-        add esp, 4                                      ; clean stack after func call
-        push eax                                        ; eax is return value of szatoi
-        mov [counter_stack], eax                        ; set number of free spaces in stack to argv[1]    
+        push dword [stack_size]                               
         call malloc
         add esp, 4                                      ; clean stack after func call
         pop ecx
         mov [op_stack], eax
-        mov ecx, [op_stack]                                 ; set ecx to point the top of the op_stack
+        mov ecx, [op_stack]                             ; set ecx to point the top of the op_stack
         jmp start_loop
     
 
     start_loop:
+        or byte [isFirstLink], 1
         startFunction
         push prompt_string			                        ; call printf with 2 arguments -  
 		push format_string			                        ; pointer to prompt message and pointer to format string
@@ -111,57 +152,61 @@ main:
 
     case_operand:
         mov dword ebx, buffer                   ; ebx <- pointer to the string
-        mov eax, 0                          ; al <- first value (00000000)
+        mov eax, 0                              ; al <- first value (00000000)
         .loop:                                  ; go over all chars in string
             cmp byte [ebx], 0                   ; checks if curr char is null- terminator
-            je start_loop
+            jz .end
 
             movzx edx, byte [ebx]                ; dl <- cur char with zero padding
             sub dl, 48                          ; dl <- real value of curr char with zero padding
             push eax
             shl al, 1
             jc .of1
-            sub esp, 4
+            add esp, 4
             push eax
             shl al, 1
             jc .of2
-            sub esp, 4
+            add esp, 4
             push eax
             shl al, 1
             jc .of3
-            sub esp, 4
+            add esp, 4
             add al, dl                           ; add the value of the curr char to al
         .continue:
             inc ebx                          ; ebx <- next char
-            jmp .loop                        ; continue looping
+            jmp .loop                       ; continue looping
+
+        .end: 
+            push eax
+            push 0
+            call addLink
+            add esp, 4
+            jmp start_loop
 
         .of1:
-            and dl, 0
+            mov al, dl 
+            and dl, 0   
             push edx
-            startFunction
             call addLink
-            endFunction
-            sub esp, 4
-            mov al, dl
+            add esp, 8
             jmp .continue
         .of2:
-            and dl, 4
+            mov al, dl  
+            and al, 3   
+            and dl, 4   
+            shr edx, 2       
             push edx
-            startFunction
             call addLink
-            endFunction
-            sub esp, 4
-            mov al, dl
+            add esp, 8
             jmp .continue
         .of3:
-            and dl, 6
-            shr edx, 1
-            push edx
-            startFunction
+            mov al, dl  
+            and al, 1   
+            and dl, 6   
+            shr edx, 1      
+            push edx        
             call addLink
-            endFunction
-            sub esp, 4
-            mov al, dl
+            add esp, 8
             jmp .continue    
 
     case_operator:
@@ -186,14 +231,12 @@ main:
         ;cmp byte [buffer], 42 	                            ; check if the input is '*'
 	    ;jz case_multiplication				
 			
-
-
         case_quit:
             startFunction
-            push operator_counter			 ; call printf with 2 arguments -  
-            push format_int			 ; pointer to prompt message and pointer to format string
+            push dword [operator_counter]			 ; call printf with 2 arguments -  
+            push dword [format_int]			     ; pointer to prompt message and pointer to format string
             call printf            
-            add esp, 8			     ; clean up stack after call
+            add esp, 8			             ; clean up stack after call
             endFunction
 
         case_addition:
@@ -205,40 +248,6 @@ main:
         case_and:
 
         case_n:
-
-    print_number:
-        mov edx, 0
-        mov eax, [ecx-4]        ; eax = address on heap
-        cmp byte [eax], 0 
-        jnz print_loop
-
-        print_loop:
-            cmp byte [eax], 0
-            jz start_print
-            mov dword ebx, [eax]    ; ebx = 4bytes from the start of the link
-            shr ebx, 8              ; ebx contains only data 
-            push ebx
-            push format_oct
-            inc edx
-            add eax, 3              ; set eax to next link
-            jmp print_loop
-
-        start_print:
-            cmp edx, 0
-            jnz print
-            jz start_loop                                   
-
-        print:
-            startFunction
-            call printf            
-            add esp, 8
-            dec edx
-            jmp start_print
-
-
-
-
-
 
         ;case_multiplication:
 
@@ -264,32 +273,43 @@ szatoi:                                                 ; function that converts
         ret
 
 addLink:
+    push ebp
+    mov ebp, esp
+    pushad
+
     mov edx, [ebp+8]
-    add edx, [ebp+4]
+    add edx, [ebp+12]
     cmp byte [isFirstLink], 1
     jz .add_first_link
     jmp .add_link
 
     .add_first_link:
-        cmp dword [counter_stack], 0                     ; check for availible free space in stack
+        cmp dword [stack_size], 0            ; check for availible free space in stack
         je .stack_overflow
-        startFunction
+        push ecx
+        push edx
         push 5
         call malloc
         add esp, 4
-        endFunction
+        pop edx
+        pop ecx
         mov [ecx], eax
         mov byte [eax], dl
         inc eax
         mov dword [eax], 0
         and byte [isFirstLink], 0
-        jmp .return
+        jmp .return_first_link
 
     .add_link:
+        push ecx
+        push edx
         push 5
         call malloc
+        add esp, 4
+        pop edx
+        pop ecx
         push dword [ecx-4]
-        mov [ecx], eax
+        mov [ecx-4], eax
         mov byte [eax], dl
         inc eax
         pop dword [eax]
@@ -298,13 +318,19 @@ addLink:
     .stack_overflow:
         push overflow_string			             ; call printf with 2 arguments -  
         push format_string			                 ; pointer to prompt message and pointer to format string
-        startFunction
-        call printf
-        endFunction                
+        call printf                
         add esp, 8			                         ; clean up stack after call
         jmp start_loop
 
+    .return_first_link:
+        popad
+        add ecx, 4
+        sub byte [stack_size], 1
+        pop ebp
+        ret
+
     .return:
+        popad
         pop ebp
         ret    
 
