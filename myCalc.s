@@ -139,7 +139,7 @@ main:
             add esp, 4			                             ; clean up stack after call
             pop ecx
             push edx
-            mov [ecx], eax                                   ; set current free space to new allocated space
+            mov [ecx], eax                         ; set current free space to new allocated space
             mov byte dl, [binary_value] 
             mov byte [eax], dl                     ; set first byte in link
             inc eax

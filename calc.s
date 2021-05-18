@@ -16,6 +16,7 @@ section .data                                               ; we define (global)
     counter: dd 0                                           ; 4bytes counter
     op_stack: dd 1                                          ; initalize an empty pointer
     debug_flag: db 1
+    isFirstLink: db 1
 
 section	.rodata					                            ; we define (global) read-only variables in .rodata section
 	format_string: db "%s", 10, 0	                        ; format string for printf func
@@ -66,18 +67,16 @@ main:
     modify_stack:
         mov dword ebx, [ebp + 12]                              ; ebx <- string representing stack size (in octal)
         mov dword ebx, [ebx + 4]
+        push ecx
         push ebx                                        ; push ebx as an argument
-        sub esp, 4
         call szatoi                                     ; call function szatoi
-        pop eax
         add esp, 4                                      ; clean stack after func call
         push eax                                        ; eax is return value of szatoi
+        mov [counter_stack], eax                        ; set number of free spaces in stack to argv[1]    
         call malloc
         add esp, 4                                      ; clean stack after func call
-
+        pop ecx
         mov [op_stack], eax
-        mov eax, [esp + 8]
-        mov [counter_stack], eax                            ; set number of free spaces in stack to argv[1]    
         mov ecx, [op_stack]                                 ; set ecx to point the top of the op_stack
         jmp start_loop
     
@@ -90,12 +89,12 @@ main:
         add esp, 8					                        ; clean up stack after call
         endFunction
 
-        startFunction
+        startFunction    
         push dword buffer                                   ; input buffer
         call gets
         add esp, 4                                          ; remove 1 push from stuck
-        endFunction 
-
+        endFunction
+        
         cmp byte [buffer], 48                               ; check if the input greater than '0'
 	    jge is_number				                        ; if so jump to 'is_number' label
 
@@ -111,7 +110,59 @@ main:
 
 
     case_operand:
-     
+        mov dword ebx, buffer                   ; ebx <- pointer to the string
+        mov eax, 0                          ; al <- first value (00000000)
+        .loop:                                  ; go over all chars in string
+            cmp byte [ebx], 0                   ; checks if curr char is null- terminator
+            je start_loop
+
+            movzx edx, byte [ebx]                ; dl <- cur char with zero padding
+            sub dl, 48                          ; dl <- real value of curr char with zero padding
+            push eax
+            shl al, 1
+            jc .of1
+            sub esp, 4
+            push eax
+            shl al, 1
+            jc .of2
+            sub esp, 4
+            push eax
+            shl al, 1
+            jc .of3
+            sub esp, 4
+            add al, dl                           ; add the value of the curr char to al
+        .continue:
+            inc ebx                          ; ebx <- next char
+            jmp .loop                        ; continue looping
+
+        .of1:
+            and dl, 0
+            push edx
+            startFunction
+            call addLink
+            endFunction
+            sub esp, 4
+            mov al, dl
+            jmp .continue
+        .of2:
+            and dl, 4
+            push edx
+            startFunction
+            call addLink
+            endFunction
+            sub esp, 4
+            mov al, dl
+            jmp .continue
+        .of3:
+            and dl, 6
+            shr edx, 1
+            push edx
+            startFunction
+            call addLink
+            endFunction
+            sub esp, 4
+            mov al, dl
+            jmp .continue    
 
     case_operator:
         cmp byte [buffer], 113 	                            ; check if the input is 'q'
@@ -138,12 +189,12 @@ main:
 
 
         case_quit:
+            startFunction
             push operator_counter			 ; call printf with 2 arguments -  
             push format_int			 ; pointer to prompt message and pointer to format string
-            startFunction
-            call printf
-            endFunction            
+            call printf            
             add esp, 8			     ; clean up stack after call
+            endFunction
 
         case_addition:
 
@@ -179,8 +230,7 @@ main:
 
         print:
             startFunction
-            call printf
-            endFunction            
+            call printf            
             add esp, 8
             dec edx
             jmp start_print
@@ -192,7 +242,7 @@ main:
 
         ;case_multiplication:
 
-szatoi:                                                             ; function that converts octal string to numeric value
+szatoi:                                                 ; function that converts octal string to numeric value
     push ebp
     mov ebp, esp
 
@@ -202,19 +252,62 @@ szatoi:                                                             ; function t
         cmp byte [ebx], 0                               ; checks if curr char is null- terminator
         je .return
 
-        movzx ecx, byte [ebx]                           ; ecx <- cur char with zero padding
-        sub ecx, 48                                     ; ecx <- real value of curr char with zero padding
+        movzx edx, byte [ebx]                           ; edx <- cur char with zero padding
+        sub edx, 48                                     ; edx <- real value of curr char with zero padding
         shl eax, 3                                      ; multiply eax by 8
-        add eax, ecx                                    ; add the value of the curr char to eax
+        add eax, edx                                    ; add the value of the curr char to eax
         inc ebx                                         ; ebx <- next char
         jmp .loop                                       ; continue looping
     
     .return:
-        mov esp, ebp
         pop ebp
-        mov dword [esp-4], eax
+        ret
 
-        
+addLink:
+    mov edx, [ebp+8]
+    add edx, [ebp+4]
+    cmp byte [isFirstLink], 1
+    jz .add_first_link
+    jmp .add_link
+
+    .add_first_link:
+        cmp dword [counter_stack], 0                     ; check for availible free space in stack
+        je .stack_overflow
+        startFunction
+        push 5
+        call malloc
+        add esp, 4
+        endFunction
+        mov [ecx], eax
+        mov byte [eax], dl
+        inc eax
+        mov dword [eax], 0
+        and byte [isFirstLink], 0
+        jmp .return
+
+    .add_link:
+        push 5
+        call malloc
+        push dword [ecx-4]
+        mov [ecx], eax
+        mov byte [eax], dl
+        inc eax
+        pop dword [eax]
+        jmp .return
+
+    .stack_overflow:
+        push overflow_string			             ; call printf with 2 arguments -  
+        push format_string			                 ; pointer to prompt message and pointer to format string
+        startFunction
+        call printf
+        endFunction                
+        add esp, 8			                         ; clean up stack after call
+        jmp start_loop
+
+    .return:
+        pop ebp
+        ret    
 
 
-    
+
+   
