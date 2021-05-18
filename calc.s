@@ -73,6 +73,7 @@ main:
 
         mov dword ebx, [ebp+12]                             ; ebx <- argument array
         add ebx, 4                                          ; ebx <- first 'extra argument'
+        
         .loop:
             cmp dword [args_counter], 0
             jz modify_stack
@@ -82,7 +83,7 @@ main:
 
         .debug_on:
             or byte [debug_flag], 1                     ; turn on debug flag
-            sub byte [args_counter], 1                            ; reduce args counter by 1
+            sub byte [args_counter], 1                  ; reduce args counter by 1
             add ebx, 4                                  ; move to next extra arg
             jmp .loop                                   ; loop again
 
@@ -91,7 +92,7 @@ main:
             call szatoi                                 ; call function szatoi
             add esp, 4                                  ; clean stack after func call
             mov dword [stack_size], eax                 ; save return value as stack size
-            sub byte [args_counter], 1                            ; reduce args counter by 1
+            sub byte [args_counter], 1                  ; reduce args counter by 1
             add ebx, 4                                  ; move to next extra arg
             jmp .loop                                   ; loop again
             
@@ -100,15 +101,7 @@ main:
             push format_string			                 ; pointer to prompt message and pointer to format string
             call printf                
             add esp, 8			                         ; clean up stack after call
-
-        .conitnue:
-            push 5
-            call malloc
-            add esp, 4
-            mov dword [op_stack], eax                                      
-
-            mov ecx, [op_stack]                                   ; set ecx to point the top of the op_stack
-            jmp start_loop
+            jmp case_quit
 
     modify_stack:
         push ecx
