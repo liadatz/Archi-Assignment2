@@ -21,7 +21,7 @@
 %endmacro
 
 section .data                                               ; we define (global) initialized variables in .data section
-    stack_size: dd 5                                        ; 4bytes stack counter- counts the number of free spaces
+    stack_size: dd 5                                     ; 4bytes stack counter- counts the number of free spaces
     num_of_elements: dd 0                                   ; define number of current elements in stack 
     operator_counter: dd 0                                  ; 4bytes counter- counts the number of operations.
     args_counter: dd 0                                           ; 4bytes counter
@@ -230,6 +230,9 @@ main:
 
 
         
+        
+
+
     case_operator:
         cmp byte [buffer], 113 	                            ; check if the input is 'q'
 	    jz case_quit				                        ; if so quit the loop
@@ -263,7 +266,106 @@ main:
         case_addition:
 
         case_popAndPrint:
+            cmp dword [num_of_elements], 0
+            jz stack_underflow
+            mov esi, ecx                       ; set esi to hold adress of first link
+            sub esi, 4
+            mov eax, pop_buffer+79             ; go the last char of pop_buffer
+            mov byte [eax], 0                  ; put null-terminator in the end of the buffer
+            dec eax
+
+            .233link:
+                mov dword esi, [esi]           ; set ecx to point to start of first/next link
+                mov edx, [esi]                 ; edx <- data of curr link
+                and edx, 7                     ; take last 3 bits of data
+                add edx, 48                    ; convert to ascii value
+                mov [eax], edx                 ; put char value in pop_buffer
+                dec eax
+
+                and edx, 56                    ; take next 3 bits of data
+                shr edx, 3                     ; move the bits to right end of edx
+                add edx, 48                    ; convert to ascii value
+                mov [eax], edx                 ; put char value in pop_buffer
+                dec eax
+
+                and edx, 192
+                shr edx, 6
+                inc esi                        ; set esi to point address of next link
+                cmp dword [esi], 0               ; if next link is null
+                jnz .1331link                  ; jump to next possible type of link
+
+                add edx, 48                    ; convert to ascii value
+                mov [eax], edx                 ; put char value in pop_buffer
+                dec eax
+                jmp .print_number              ; print the number
             
+            .1331link:
+                mov dword esi, [esi]           ; set ecx to point to start of next link
+                mov ebx, edx                   ; put aside bits we pulled from prev link
+                mov edx, [esi]                 ; edx <- data of curr link
+                and edx, 1                     ; take last bit of data
+                shl edx, 2
+                or edx, ebx                    ; combine with bits from prev link
+                add edx, 48                    ; convert to ascii value
+                mov [eax], edx                 ; put char value in pop_buffer
+                dec eax
+
+                and edx, 14                    ; take next 3 bits of data
+                shr edx, 1                     ; move the bits to right end of edx
+                add edx, 48                    ; convert to ascii value
+                mov [eax], edx                 ; put char value in pop_buffer
+                dec eax
+
+                and edx, 112                   ; take next 3 bits of data
+                shr edx, 4                     ; move the bits to right end of edx
+                add edx, 48                    ; convert to ascii value
+                mov [eax], edx                 ; put char value in pop_buffer
+                dec eax
+
+                and edx, 128
+                shr edx, 7
+                inc esi                        ; set ecx to point address of next link
+                cmp dword [esi], 0             ; if next link is null
+                jnz .332link                   ; jump to next possible type of link
+                
+                add edx, 48
+                mov [eax], edx                 ; put char value in pop_buffer
+                dec eax
+                jmp .print_number
+
+            
+            .332link:
+                mov dword esi, [esi]           ; set ecx to point to start of next link
+                mov ebx, edx                   ; put aside bits we pulled from prev link
+                mov edx, [esi]            ; edx <- data of curr link
+                and edx, 3                     ; take last 2 bits of data
+                shl edx, 1
+                and edx, ebx                   ; combine with bits from prev link
+                add edx, 48                    ; convert to ascii value
+                mov [eax], edx                 ; put char value in pop_buffer
+                dec eax
+
+                and edx, 28                    ; take next 3 bits of data
+                shr edx, 2                     ; move the bits to right end of edx
+                add edx, 48                    ; convert to ascii value
+                mov [eax], edx                 ; put char value in pop_buffer
+                dec eax
+
+                and edx, 224
+                shr edx, 5
+                add edx, 48                    ; convert to ascii value
+                mov [eax], edx                 ; put char value in pop_buffer
+                dec eax
+                inc esi                        ; set ecx to point address of next link
+                cmp dword [esi], 0             ; if next link is null
+                jnz .233link                   ; jump to next possible type of link
+                jmp .print_number              ; print the number
+
+            .print_number:
+                jmp .pop:
+            
+            .pop:
+                
 
         case_duplicate:
         cmp dword [num_of_elements], 1
