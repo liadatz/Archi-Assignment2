@@ -273,9 +273,8 @@ main:
         mov eax, ecx ; get operand address (first link)
         sub eax, 4
         mov dword ebx, [eax] ; bl <- address of operand
-        
+        mov eax, ebx
             .loop:
-                mov eax, ebx
                 mov ebx, 0
                 mov bl, byte [eax]
                 push ebx
@@ -293,6 +292,7 @@ main:
                 inc dword [operator_counter]
                 inc dword [num_of_elements]
                 dec dword [stack_size]
+                add ecx, 4
                 jmp start_loop
                 
                 
@@ -411,10 +411,10 @@ addLink:
                 jmp .findNextLink
 
         .continue:
+            mov dword [ebx], eax
             mov byte [eax], dl
             inc eax
             mov dword [eax], 0
-            mov dword [ebx], eax
             jmp .return
 
     .stack_overflow:
