@@ -194,7 +194,7 @@ main:
          .no_free_bits:
             mov al, dl
             and edx, 0
-            mov ecx, [esp-8]
+            mov dword ecx, [esp-4]
             call addLink
             mov ecx, 3
             add esp, 4
@@ -208,7 +208,7 @@ main:
             or esi, edx
             push esi
             shr al, 1
-            mov ecx, [esp-8]
+            mov dword ecx, [esp-4]
             call addLink
             mov ecx, 2
             add esp, 4
@@ -222,7 +222,7 @@ main:
             or esi, edx
             push esi
             shr al, 2
-            mov ecx, [esp-8]
+            mov dword ecx, [esp-4]
             call addLink
             mov ecx, 1
             add esp, 4
@@ -282,10 +282,10 @@ main:
                 call addLink
                 add esp, 4
                 inc eax
-                ;cmp dword [eax+1], 0
-                mov dword eax, [eax] ; eax <- next link
-                cmp eax, 0 ; check if curr link is NULL
+                cmp dword [eax], 0
                 je .finish
+                mov dword eax, [eax] ; eax <- next link
+                ;cmp eax, 0 ; check if curr link is NULL
                 ;mov dword eax, [eax+1] ; eax <- next link
                 jmp .loop
 
