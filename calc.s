@@ -145,31 +145,41 @@ main:
 
     case_operand:
         mov dword ebx, buffer                   ; ebx <- pointer to the string
-        mov eax, 0                              ; al <- first value (00000000)
-        .loop:                                  ; go over all chars in string
-            cmp byte [ebx], 0                   ; checks if curr char is null- terminator
-            jz .end
+        mov eax, 0                              ; eax <- first value
 
-            movzx edx, byte [ebx]                ; dl <- cur char with zero padding
-            sub dl, 48                          ; dl <- real value of curr char with zero padding
-            push eax
-            shl al, 1
+        .loop1:                                  ; go to the end of buffer
+            cmp byte [edx], 0                   ; while cur char is not null
+            jz .end1
+        
+            inc edx                             ; move to the next char
+            jmp .loop1
+        .end1:
+            dec edx
+
+        mov ecx, 0                             ; counts 0 to 2
+        .loop2:                                ; go over all chars in string
+            cmp dword edx, buffer              ; checks if curr char is null- terminator
+            jz .end2
+
+            movzx ebx, byte [ebx]               ; ebx <- cur char with zero padding
+            sub bl, 48                          ; ebx <- real value of curr char with zero padding
+            shl bl, cl
+            shl bl, cl
+
+            shl bl, 1
             jc .of1
-            add esp, 4
-            push eax
-            shl al, 1
+            shl bl, 1
             jc .of2
-            add esp, 4
-            push eax
-            shl al, 1
+            shl bl, 1
             jc .of3
-            add esp, 4
-            add al, dl                           ; add the value of the curr char to al
-        .continue:
+
+            or al, bl
+
+        .continue2:
             inc ebx                          ; ebx <- next char
             jmp .loop                       ; continue looping
 
-        .end: 
+        .end2: 
             push eax
             push 0
             call addLink

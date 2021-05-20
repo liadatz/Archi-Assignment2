@@ -21,7 +21,7 @@
 %endmacro
 
 section .data                                               ; we define (global) initialized variables in .data section
-    stack_size: dd 5                                     ; 4bytes stack counter- counts the number of free spaces
+    stack_size: dd 5                                        ; 4bytes stack counter- counts the number of free spaces
     num_of_elements: dd 0                                   ; define number of current elements in stack 
     operator_counter: dd 0                                  ; 4bytes counter- counts the number of operations.
     args_counter: dd 0                                           ; 4bytes counter
@@ -41,7 +41,7 @@ section	.rodata					                            ; we define (global) read-only v
 
 section .bss						                        ; we define (global) uninitialized variables in .bss section
     buffer: resb 80                                         ; 80bytes buffer- stores input from user (max length of input is 80 chars)
-    buffer_length: resb 80                                         
+    pop_buffer: resb 80                                         
     
 
 
@@ -230,9 +230,6 @@ main:
 
 
         
-        
-
-
     case_operator:
         cmp byte [buffer], 113 	                            ; check if the input is 'q'
 	    jz case_quit				                        ; if so quit the loop
@@ -266,6 +263,7 @@ main:
         case_addition:
 
         case_popAndPrint:
+            
 
         case_duplicate:
         cmp dword [num_of_elements], 1
