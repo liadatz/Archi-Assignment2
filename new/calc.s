@@ -272,17 +272,18 @@ main:
         jl stack_underflow
         mov eax, ecx ; get operand address (first link)
         sub eax, 4
-
+        mov dword ebx, [eax] ; bl <- address of operand
+        
             .loop:
-                mov dword ebx, [eax] ; bl <- address of operand
                 mov eax, ebx
                 mov ebx, 0
                 mov bl, byte [eax]
                 push ebx
                 call addLink
                 add esp, 4
+                inc eax
                 ;cmp dword [eax+1], 0
-                mov dword eax, [eax+1] ; eax <- next link
+                mov dword eax, [eax] ; eax <- next link
                 cmp eax, 0 ; check if curr link is NULL
                 je .finish
                 ;mov dword eax, [eax+1] ; eax <- next link
