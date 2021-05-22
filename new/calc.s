@@ -116,7 +116,6 @@ main:
         jmp start_loop
     
         
-
     start_loop:
         or byte [isFirstLink], 1                            ; [isFirstLink] <- 1
         startFunction
@@ -138,7 +137,6 @@ main:
         jmp case_operator                                   ; if not, then the input is an operator
 
         
-
     is_number:
         cmp byte [buffer], 57                               ; check if the input is lesser than '9'
         jle case_operand                                    ; if so, the input first char is a number, and we want to deal with the it as a operand
