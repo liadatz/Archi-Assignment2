@@ -103,6 +103,7 @@ main:
             push format_string			                    ; pointer to prompt message and pointer to format string
             call printf                
             add esp, 8			                            ; clean up stack after call
+            mov ecx, 1                                      ; for free purpose
             jmp case_quit
 
     modify_stack:
@@ -263,6 +264,22 @@ main:
 			
         case_quit:
             printing stdout, format_int, [operator_counter]
+            .loop:
+                cmp dword ecx, [op_stack]                   ; compare ecx (next available free spcae) with with start of the stack
+                je .end                                     ; if so, no oprenads left to free 
+                push dword [ecx-4]                          ; push next operand
+                call free_operand                       
+                add esp, 4                                  ; cleanup stack
+                sub ecx, 4                                  ; ecx now point to next operand in stack or start of stack
+                jmp .loop
+            .end:
+                cmp dword [op_stack], 1                     ; check if op_stack is allocated
+                jne free_stack                              ; if so, free op_stack
+                jmp restore_and_quit
+                free_stack:
+                    push dword [op_stack]
+                    call free
+            restore_and_quit:
             pop ebp
             ret
 
@@ -383,6 +400,14 @@ main:
                 .end:
                     printing stdout, format_string, eax
                     inc dword [operator_counter]
+                    dec dword [num_of_elements]
+                    inc dword [stack_size]
+
+                    push dword [ecx-4]                      ; free operand
+                    call free_operand
+                    add esp, 4                              ; cleanup stack
+                    sub ecx, 4                              ; ecx now points to next available space in stack  
+            
                     jmp start_loop
                     
                             
@@ -418,35 +443,47 @@ main:
         case_and:
         cmp dword [num_of_elements], 2
         jl stack_underflow
-        mov eax, ecx                                        ; get first operand address (first link)
-        sub eax, 4
-        mov ebx, ecx                                        ; get second operand address (first link)
-        sub eax, 8
+        mov eax, ecx                                        ; eax <- ecx (pointer to available cell in stack)                                   
+        sub eax, 4                                          ; get first operand address
+        mov eax, [eax]                                      ; get first link of first operand
+        mov ebx, ecx                                        ; eax <- ecx (pointer to available cell in stack)                                        
+        sub ebx, 8                                          ; get second operand address    
+        mov ebx, [ebx]                                      ; get first link of second operand                                      
 
             .loop:
-                mov byte dl, [eax]                          ; dl <- data of first operand
+                mov edx, 0                                  ; reset edx
+                mov esi, 0                                  ; reset esi
+                mov dl, byte [eax]                          ; dl <- data of first operand
                 mov esi, [ebx]                              ; esi <- data of second operand
                 and edx, esi                                ; dl <- result of '&' bitwise of curr link
                 push edx
                 call addLink
                 add esp, 4
-                mov dword eax, [eax+1]                      ; eax <- next link
-                cmp eax, 0                                  ; check if curr link is NULL
-                je .finish
-                mov dword ebx, [ebx+1]                      ; ebx <- next link
-                cmp ebx, 0                                  ; check if curr link is NULL
-                je .finish
+                inc eax                                     ; eax now point to address of next link of first operand
+                inc ebx                                     ; ebx now point to address of next link of second operand
+                cmp dword [eax], 0                          ; check if next link of first operand is NULL
+                je .end                                     ; if so, end the function
+                cmp dword [ebx], 0                          ; check if next link of first operand is NULL
+                je .end                                     ; if so, end the function
+            .step:
+                mov dword eax, [eax]                        ; eax <- next link
+                mov dword ebx, [ebx]                        ; ebx <- next link
                 jmp .loop
-            
-            .finish:
+            .end:
                 inc dword [operator_counter]
                 dec dword [num_of_elements]
                 inc dword [stack_size]
-                mov eax, ecx                                ; get address of new link
-                sub eax, 4
-                sub ecx, 12
-                mov [ecx], eax                              ; set first operand in stack to be new link
-                add ecx, 4                                  ; set new current location of stack
+
+                mov eax, [ecx]                              ; get address of new link
+                push dword [ecx-4]                          ; free second operand
+                call free_operand
+                add esp, 4                                  ; cleanup stack
+                push dword [ecx-8]                          ; free first operand
+                call free_operand
+                add esp, 4                                  ; cleanup stack
+                sub ecx, 8                                  ; ecx = stack address of first operand
+                mov [ecx], eax                              ; replace first operand address with new link
+                add ecx, 4                                  ; set next free space in stack
                 jmp start_loop
                 
 
@@ -455,10 +492,12 @@ main:
         ;case_multiplication:
 
         stack_underflow:
+            startFunction
             push underflow_string			                ; call printf with 2 arguments -  
             push format_string			                    ; pointer to prompt message and pointer to format string
             call printf                
             add esp, 8			                            ; clean up stack after call
+            endFunction
             jmp start_loop
 
 szatoi:                                                     ; function that converts octal string to numeric value
@@ -536,10 +575,12 @@ addLink:
             jmp .return
 
     .stack_overflow:
+        startFunction
         push overflow_string			                    ; call printf with 2 arguments -  
         push format_string			                        ; pointer to prompt message and pointer to format string
         call printf                
         add esp, 8			                                ; clean up stack after call
+        endFunction
         jmp start_loop
 
     .return_first_link:
