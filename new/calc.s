@@ -148,7 +148,7 @@ section .data                                               ; we define (global)
     operator_counter: dd 0                                  ; 4bytes counter- counts the number of operations.
     args_counter: dd 0                                      ; 4bytes counter
     op_stack: dd 1                                          ; initalize an empty pointer
-    debug_flag: db 1
+    debug_flag: db 0
     isFirstLink: db 1
     op1F: db 1
     op2F: db 1
@@ -199,7 +199,8 @@ main:
 
         mov dword ebx, [ebp+12]                             ; ebx <- argument array
         add ebx, 4                                          ; ebx <- first 'extra argument'
-        
+        mov ebx, [ebx]
+
         .loop:
             cmp dword [args_counter], 0
             jz modify_stack
@@ -210,16 +211,17 @@ main:
         .debug_on:
             or byte [debug_flag], 1                         ; turn on debug flag
             sub byte [args_counter], 1                      ; reduce args counter by 1
-            add ebx, 4                                      ; move to next extra arg
+            add ebx, 3
             jmp .loop                                       ; loop again
 
         .set_stack_size:
-            push ebx                                        ; push arg to szatoi func
-            call szatoi                                     ; call function szatoi
-            add esp, 4                                      ; clean stack after func call
+            push ebx
+            call szatoi
+            pop ebx                                     ; call function szatoi
+            ;add esp, 4                                      ; clean stack after func call
             mov dword [stack_size], eax                     ; save return value as stack size
             sub byte [args_counter], 1                      ; reduce args counter by 1
-            add ebx, 4                                      ; move to next extra arg
+            add ebx, 2                                      ; move to next extra arg
             jmp .loop                                       ; loop again
             
         .error:
@@ -259,8 +261,8 @@ main:
         add esp, 4                                          ; remove 1 push from stuck
         endFunction
 
-        cmp byte [debug_flag], 1
-        call debug_print_input
+        ;cmp byte [debug_flag], 1
+        ;call debug_print_input
         
         cmp byte [buffer], 48                               ; check if the input greater than '0'
 	    jge is_number				                        ; if so jump to 'is_number' label
@@ -318,16 +320,18 @@ main:
             cmp eax, 0
             je .check_if_first
             jmp .push_data
+
             .check_if_first:
                 cmp byte [isFirstLink], 1
                 je .push_data
+
             .push_data:
-            push eax                                        ; push data of new link
-            call addLink
-            add esp, 4                                      ; cleanup stack
+                push eax                                        ; push data of new link
+                call addLink
+                add esp, 4                                      ; cleanup stack
             .end2:
-            add ecx, 4                                      ; increase ecx to next available slot in stack
-            jmp start_loop
+                add ecx, 4                                      ; increase ecx to next available slot in stack
+                jmp start_loop
 
          .no_free_bits:
             pop esi                                         ; restore esi (contain data of new link)
@@ -371,9 +375,6 @@ main:
             mov ecx, 1                                      ; set counter to 3
             jmp .step
 
-
-        
-        
 
 
     case_operator:
