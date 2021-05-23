@@ -110,7 +110,10 @@ main:
 
     modify_stack:
         push ecx                                            ; backup ecx
-        push dword [stack_size]                             ; push size for malloc  
+        mov eax, [stack_size]                               ; push size for malloc  
+        mov ecx, 4
+        mul ecx
+        push eax
         call malloc
         add esp, 4                                          ; clean stack after func call
         pop ecx                                             ; restore ecx
@@ -277,8 +280,10 @@ main:
                 jne free_stack                              ; if so, free op_stack
                 jmp restore_and_quit
                 free_stack:
-                    push dword [op_stack]
+                    mov eax, [op_stack]
+                    push eax
                     call free
+                    add esp, 4                                  ; cleanup stack
             restore_and_quit:
             pop ebp
             ret
@@ -353,8 +358,8 @@ main:
             .end:
                 popf
                 inc dword [operator_counter]
-                dec dword [num_of_elements]
-                inc dword [stack_size]
+                sub dword [num_of_elements], 2
+                add dword [stack_size], 2
 
                 mov eax, [ecx]                              ; get address of new link
                 push dword [ecx-4]                          ; free second operand
@@ -514,8 +519,6 @@ main:
                 jmp .loop
             .end:
                 inc dword [operator_counter]                ; increase num of operators
-                inc dword [num_of_elements]                 ; increse num of elements
-                dec dword [stack_size]                      ; decrease num of available spaces in stack
                 add ecx, 4                                  ; ecx now points to next available space in stack
                 jmp start_loop
                 
@@ -552,8 +555,8 @@ main:
                 jmp .loop
             .end:
                 inc dword [operator_counter]
-                dec dword [num_of_elements]
-                inc dword [stack_size]
+                sub dword [num_of_elements], 2
+                add dword [stack_size], 2
 
                 mov eax, [ecx]                              ; get address of new link
                 push dword [ecx-4]                          ; free second operand
@@ -569,6 +572,12 @@ main:
                 
 
         case_n:
+            cmp dword [num_of_elements], 1
+            jl stack_underflow
+            mov eax, ecx                                        ; eax <- address of free cell in stack
+            sub eax, 4                                          ; get operand address in stack
+            mov dword eax, [eax]                                ; eax <- address of link
+                .loop:
 
         ;case_multiplication:
 
