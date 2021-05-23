@@ -189,6 +189,7 @@ section .text
 main:
     push ebp
     mov ebp, esp
+    pushad
 
     init:
         mov ebx, [ebp+8]
@@ -419,8 +420,9 @@ main:
                     call free
                     add esp, 4                                  ; cleanup stack
             restore_and_quit:
-            pop ebp
-            ret
+                popad
+                pop ebp
+                ret
 
         case_addition:
             clc                                                 ; CF <- 0
