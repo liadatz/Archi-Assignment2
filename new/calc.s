@@ -451,7 +451,7 @@ main:
                 mov edx, [esi]                              ; edx <- data of curr link
                 and edx, 3                                  ; take last 2 bits of data
                 shl edx, 1
-                and edx, ebx                                ; combine with bits from prev link
+                or edx, ebx                                ; combine with bits from prev link
                 add edx, 48                                 ; convert to ascii value
                 mov [eax], dl                               ; put char value in pop_buffer
                 dec eax
@@ -472,18 +472,23 @@ main:
                 inc esi
                 cmp dword [esi], 0                          ; if next link is null
                 jnz .233link                                ; jump to next possible type of link
-                add edx, 48
-                mov [eax], dl                               ; put char value in pop_buffer
+                ;add edx, 48
+                ;mov [eax], dl                               ; put char value in pop_buffer
                 jmp .print_number
 
             .print_number:
-                 .clean_zeros_loop:
+                inc eax
+                .clean_zeros_loop:
                     cmp byte [eax], 48                      ; check if curr char is '0'
                     jnz .end
                     inc eax
                     jmp .clean_zeros_loop
                 
                 .end:
+                    cmp byte [eax], 0
+                    jz .recreate_zero
+                
+                .end_continue:
                     printing stdout, format_string, eax
                     inc dword [operator_counter]
                     dec dword [num_of_elements]
@@ -495,6 +500,10 @@ main:
                     sub ecx, 4                              ; ecx now points to next available space in stack  
             
                     jmp start_loop
+                
+                .recreate_zero:
+                    mov byte [eax], 48
+                    jmp .end_continue
                     
                             
 
