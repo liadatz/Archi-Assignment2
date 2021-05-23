@@ -141,7 +141,6 @@
             printing %1, format_string, eax
 %endmacro
 
-
 section .data                                               ; we define (global) initialized variables in .data section
     stack_size: dd 5                                        ; 4bytes stack counter- counts the number of free spaces
     num_of_elements: dd 0                                   ; define number of current elements in stack 
@@ -167,7 +166,6 @@ section .bss						                        ; we define (global) uninitialized var
     buffer: resb 80                                         ;        ;add ecx, 4 80bytes buffer- stores input from user (max length of input is 80 chars)
     pop_buffer: resb 80                                         
     
-
 
 section .text
   align 16
@@ -218,8 +216,8 @@ main:
         .set_stack_size:
             push ebx
             call szatoi
-            pop ebx                                     ; call function szatoi
-            ;add esp, 4                                      ; clean stack after func call
+            pop ebx                                         ; call function szatoi
+            ;add esp, 4                                     ; clean stack after func call
             mov dword [stack_size], eax                     ; save return value as stack size
             sub byte [args_counter], 1                      ; reduce args counter by 1
             add ebx, 2                                      ; move to next extra arg
@@ -262,9 +260,12 @@ main:
         add esp, 4                                          ; remove 1 push from stuck
         endFunction
 
-        ;cmp byte [debug_flag], 1
-        ;call debug_print_input
+        cmp byte [debug_flag], 1
+        jne .continue
+        .run_debug:
+            call debug_print_input
         
+        .continue:
         cmp byte [buffer], 48                               ; check if the input greater than '0'
 	    jge is_number				                        ; if so jump to 'is_number' label
 
@@ -327,14 +328,14 @@ main:
                 je .push_data
 
             .push_data:
-                push eax                                        ; push data of new link
+                push eax                                    ; push data of new link
                 call addLink
-                add esp, 4                                      ; cleanup stack
+                add esp, 4                                  ; cleanup stack
             .end2:
-                add ecx, 4                                      ; increase ecx to next available slot in stack
+                add ecx, 4                                  ; increase ecx to next available slot in stack
                 jmp start_loop
 
-         .no_free_bits:
+        .no_free_bits:
             pop esi                                         ; restore esi (contain data of new link)
             mov al, dl                                      ; al <- new data of last char
             and edx, 0                                      ; reset edx
@@ -346,7 +347,7 @@ main:
             mov ecx, 3                                      ; set counter to 3
             jmp .step
 
-         .one_free_bit:
+        .one_free_bit:
             pop esi                                         ; restore esi (contain data of new link)
             mov al, dl                                      ; al <- data of curr char
             and dl, 1                                       ; get LSB of dl
@@ -361,7 +362,7 @@ main:
             mov ecx, 2                                      ; set counter to 2
             jmp .step
 
-         .two_free_bits:
+        .two_free_bits:
             pop esi                                         ; restore esi (contain data of new link)
             mov al, dl                                      ; al <- data of curr char
             and dl, 3                                       ; get 2 rightmost bits of dl
@@ -420,29 +421,29 @@ main:
                     call free
                     add esp, 4                                  ; cleanup stack
             restore_and_quit:
-                popad
-                pop ebp
-                ret
+            popad
+            pop ebp
+            ret
 
         case_addition:
-            clc                                                 ; CF <- 0
+            clc                                             ; CF <- 0
             cmp dword [num_of_elements], 2
             jl stack_underflow
-            mov eax, ecx                                        ; eax <- ecx (pointer to available cell in stack)                                   
-            sub eax, 4                                          ; get first operand address
+            mov eax, ecx                                    ; eax <- ecx (pointer to available cell in stack)                                   
+            sub eax, 4                                      ; get first operand address
             mov eax, [eax]                                      
-            mov esi, ecx                                        ; eax <- ecx (pointer to available cell in stack)                                        
-            sub esi, 8                                          ; get second operand address 
+            mov esi, ecx                                    ; eax <- ecx (pointer to available cell in stack)                                        
+            sub esi, 8                                      ; get second operand address 
             mov esi, [esi]                                      
-            mov edx, 0                                  ; reset edx
-            mov ebx, 0                                  ; reset esi
-            mov dl, byte [eax]                          ; dl <- data of first o            mov ecx, 0
+            mov edx, 0                                      ; reset edx
+            mov ebx, 0                                      ; reset esi
+            mov dl, byte [eax]                              ; dl <- data of first o            mov ecx, 0
             mov bl, byte [esi]                              ; esi <- data of second operand                
             pushf
 
             .loop:
                 popf
-                adc dl, bl                                ; edx <- dl + esi + CF
+                adc dl, bl                                  ; edx <- dl + esi + CF
                 pushf
                 push edx
                 call addLink
@@ -461,7 +462,7 @@ main:
                 je .first_empty
                 mov dword eax, [eax]                        ; eax <- next link
                 mov edx, 0
-                mov dl, [eax]                          ; dl <- data of first operand
+                mov dl, [eax]                               ; dl <- data of first operand
                 jmp .step_second_operand
             
             .first_empty:
@@ -474,7 +475,7 @@ main:
                 je .second_empty
                 mov dword esi, [esi]                        ; ebx <- next link
                 mov ebx, 0
-                mov bl, byte [esi]                              ; dl <- data of first operand
+                mov bl, byte [esi]                          ; dl <- data of first operand
                 jmp .loop
             
             .second_empty:
@@ -508,8 +509,8 @@ main:
                 mov [ecx], eax                              ; replace first operand address with new link
                 add ecx, 4                                  ; set next free space in stack
                 
-                cmp byte [debug_flag], 0
-                je .end2
+                cmp byte [debug_flag], 1
+                jne .end2
                 .run_debug:
                     call debug_print_result
                 .end2:
@@ -673,16 +674,14 @@ main:
                 inc dword [operator_counter]                ; increase num of operators
                 add ecx, 4                                  ; ecx now points to next available space in stack
 
-                cmp byte [debug_flag], 0
-                je .end2
+                cmp byte [debug_flag], 1
+                jne .end2
                 .run_debug:
                     call debug_print_result
                 .end2:
                     jmp start_loop
-                jmp start_loop
                 
                 
-
         case_and:
         cmp dword [num_of_elements], 2
         jl stack_underflow
@@ -728,8 +727,8 @@ main:
                 mov [ecx], eax                              ; replace first operand address with new link
                 add ecx, 4                                  ; set next free space in stack
 
-                cmp byte [debug_flag], 0
-                je .end2
+                cmp byte [debug_flag], 1
+                jne .end2
                 .run_debug:
                     call debug_print_result
                 .end2:
@@ -768,8 +767,8 @@ main:
                 mov eax, [ecx]                              ; get address of result
                 mov [ecx-4], eax                            ; set result address to be previous operand
 
-                cmp byte [debug_flag], 0
-                je .end2
+                cmp byte [debug_flag], 1
+                jne .end2
                 .run_debug:
                     call debug_print_result
                 .end2:
@@ -780,12 +779,7 @@ main:
         ;case_multiplication:
 
         stack_underflow:
-            startFunction
-            push underflow_string			                ; call printf with 2 arguments -  
-            push format_string			                    ; pointer to prompt message and pointer to format string
-            call printf                
-            add esp, 8			                            ; clean up stack after call
-            endFunction
+            printing stderr, format_string, underflow_string
             jmp start_loop
 
 szatoi:                                                     ; function that converts octal string to numeric value
@@ -863,12 +857,8 @@ addLink:
             jmp .return
 
     .stack_overflow:
-        startFunction
-        push overflow_string			                    ; call printf with 2 arguments -  
-        push format_string			                        ; pointer to prompt message and pointer to format string
-        call printf                
-        add esp, 8			                                ; clean up stack after call
-        endFunction
+        printing stderr, format_string, overflow_string
+        add esp, 4
         jmp start_loop
 
     .return_first_link:
