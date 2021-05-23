@@ -177,7 +177,7 @@ main:
 
         .continue2:
             inc ebx                          ; ebx <- next char
-            jmp .loop                       ; continue looping
+            jmp .loop2                       ; continue looping
 
         .end2: 
             push eax

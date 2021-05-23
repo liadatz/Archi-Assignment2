@@ -28,6 +28,8 @@ section .data                                               ; we define (global)
     op_stack: dd 1                                          ; initalize an empty pointer
     debug_flag: db 0
     isFirstLink: db 1
+    op1F: db 1
+    op2F: db 1
 
 section	.rodata					                            ; we define (global) read-only variables in .rodata section
 	format_string: db "%s", 10, 0	                        ; format string for printf func
@@ -282,8 +284,89 @@ main:
             ret
 
         case_addition:
-        push dword [ecx-4]
-        call free_operand
+            clc                                                 ; CF <- 0
+            cmp dword [num_of_elements], 2
+            jl stack_underflow
+            mov eax, ecx                                        ; eax <- ecx (pointer to available cell in stack)                                   
+            sub eax, 4                                          ; get first operand address
+            mov eax, [eax]                                      
+            mov esi, ecx                                        ; eax <- ecx (pointer to available cell in stack)                                        
+            sub esi, 8                                          ; get second operand address 
+            mov esi, [esi]                                      
+            mov edx, 0                                  ; reset edx
+            mov ebx, 0                                  ; reset esi
+            mov dl, byte [eax]                          ; dl <- data of first o            mov ecx, 0
+            mov bl, byte [esi]                              ; esi <- data of second operand                
+            pushf
+
+            .loop:
+                popf
+                adc dl, bl                                ; edx <- dl + esi + CF
+                pushf
+                push edx
+                call addLink
+                add esp, 4
+                inc eax                                     ; eax now point to address of next link of first operand
+                inc esi                                     ; ebx now point to address of next link of second operand
+                cmp byte [op1F], 1
+                je .step_first_operand
+                mov edx, 0
+                cmp byte [op2F], 1
+                je .step_second_operand
+                jmp .add_carry
+
+            .step_first_operand:
+                cmp dword [eax], 0                          ; check if next link of first operand is NULL
+                je .first_empty
+                mov dword eax, [eax]                        ; eax <- next link
+                mov edx, 0
+                mov dl, [eax]                          ; dl <- data of first operand
+                jmp .step_second_operand
+            
+            .first_empty:
+                mov edx, 0
+                dec byte [op1F]
+                jmp .step_second_operand
+            
+            .step_second_operand:
+                cmp dword [esi], 0                          ; check if next link of second operand is NULL
+                je .second_empty
+                mov dword esi, [esi]                        ; ebx <- next link
+                mov ebx, 0
+                mov bl, byte [esi]                              ; dl <- data of first operand
+                jmp .loop
+            
+            .second_empty:
+                cmp byte [op1F], 0
+                je .add_carry
+                dec byte [op2F]
+                mov ebx, 0
+                jmp .loop
+            
+            .add_carry:
+                mov ebx, 0
+                popf
+                jc .loop
+                pushf
+                jmp .end
+
+            .end:
+                popf
+                inc dword [operator_counter]
+                dec dword [num_of_elements]
+                inc dword [stack_size]
+
+                mov eax, [ecx]                              ; get address of new link
+                push dword [ecx-4]                          ; free second operand
+                call free_operand
+                add esp, 4                                  ; cleanup stack
+                push dword [ecx-8]                          ; free first operand
+                call free_operand
+                add esp, 4                                  ; cleanup stack
+                sub ecx, 8                                  ; ecx = stack address of first operand
+                mov [ecx], eax                              ; replace first operand address with new link
+                add ecx, 4                                  ; set next free space in stack
+                jmp start_loop
 
         case_popAndPrint:
             cmp dword [num_of_elements], 0
