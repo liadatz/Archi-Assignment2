@@ -53,92 +53,94 @@
         mov [eax], dl                               ; put char value in pop_buffer
         jmp .print_number                           ; print the number
             
-    .1331link:
-        mov dword esi, [esi]                        ; set ecx to point to start of next link
-        mov ebx, edx                                ; put aside bits we pulled from prev link
-        mov edx, [esi]                              ; edx <- data of curr link
-        and edx, 1                                  ; take last bit of data
-        shl edx, 2
-        or edx, ebx                                 ; combine with bits from prev link
-        add edx, 48                                 ; convert to ascii value
-        mov [eax], dl                               ; put char value in pop_buffer
-        dec eax
+        .1331link:
+            mov dword esi, [esi]                        ; set ecx to point to start of next link
+            mov ebx, edx                                ; put aside bits we pulled from prev link
+            mov edx, [esi]                              ; edx <- data of curr link
+            and edx, 1                                  ; take last bit of data
+            shl edx, 2
+            or edx, ebx                                 ; combine with bits from prev link
+            add edx, 48                                 ; convert to ascii value
+            mov [eax], dl                               ; put char value in pop_buffer
+            dec eax
 
-        mov dl, byte [esi]                          ; edx <- data of curr link
-        and edx, 14                                 ; take next 3 bits of data
-        shr edx, 1                                  ; move the bits to right end of edx
-        add edx, 48                                 ; convert to ascii value
-        mov [eax], dl                               ; put char value in pop_buffer
-        dec eax
+            mov dl, byte [esi]                          ; edx <- data of curr link
+            and edx, 14                                 ; take next 3 bits of data
+            shr edx, 1                                  ; move the bits to right end of edx
+            add edx, 48                                 ; convert to ascii value
+            mov [eax], dl                               ; put char value in pop_buffer
+            dec eax
                 
-        mov dl, byte [esi]                          ; edx <- data of curr link
-        and edx, 112                                ; take next 3 bits of data
-        shr edx, 4                                  ; move the bits to right end of edx
-        add edx, 48                                 ; convert to ascii value
-        mov [eax], dl                               ; put char value in pop_buffer
-        dec eax
+            mov dl, byte [esi]                          ; edx <- data of curr link
+            and edx, 112                                ; take next 3 bits of data
+            shr edx, 4                                  ; move the bits to right end of edx
+            add edx, 48                                 ; convert to ascii value
+            mov [eax], dl                               ; put char value in pop_buffer
+            dec eax
 
-        mov dl, byte [esi]                          ; edx <- data of curr link
-        and edx, 128
-        shr edx, 7
-        inc esi
-        cmp dword [esi], 0                          ; if next link is null
-        jnz .332link                                ; jump to next possible type of link
+            mov dl, byte [esi]                          ; edx <- data of curr link
+            and edx, 128
+            shr edx, 7
+            inc esi
+            cmp dword [esi], 0                          ; if next link is null
+            jnz .332link                                ; jump to next possible type of link
                 
-        add edx, 48
-        mov [eax], dl                               ; put char value in pop_buffer
-        jmp .print_number
+            add edx, 48
+            mov [eax], dl                               ; put char value in pop_buffer
+            jmp .print_number
 
             
-    .332link:
-        mov dword esi, [esi]                        ; set ecx to point to start of next link
-        mov ebx, edx                                ; put aside bits we pulled from prev link
-        mov edx, [esi]                              ; edx <- data of curr link
-        and edx, 3                                  ; take last 2 bits of data
-        shl edx, 1
-        or edx, ebx                                 ; combine with bits from prev link
-        add edx, 48                                 ; convert to ascii value
-        mov [eax], dl                               ; put char value in pop_buffer
-        dec eax
+        .332link:
+            mov dword esi, [esi]                        ; set ecx to point to start of next link
+            mov ebx, edx                                ; put aside bits we pulled from prev link
+            mov edx, [esi]                              ; edx <- data of curr link
+            and edx, 3                                  ; take last 2 bits of data
+            shl edx, 1
+            or edx, ebx                                ; combine with bits from prev link
+            add edx, 48                                 ; convert to ascii value
+            mov [eax], dl                               ; put char value in pop_buffer
+            dec eax
 
-        mov dl, byte [esi]                          ; edx <- data of curr link
-        and edx, 28                                 ; take next 3 bits of data
-        shr edx, 2                                  ; move the bits to right end of edx
-        add edx, 48                                 ; convert to ascii value
-        mov [eax], dl                               ; put char value in pop_buffer
-        dec eax
+            mov dl, byte [esi]                          ; edx <- data of curr link
+            and edx, 28                                 ; take next 3 bits of data
+            shr edx, 2                                  ; move the bits to right end of edx
+            add edx, 48                                 ; convert to ascii value
+            mov [eax], dl                               ; put char value in pop_buffer
+            dec eax
 
-        mov dl, byte [esi]                          ; edx <- data of curr link
-        and edx, 224
-        shr edx, 5
-        add edx, 48                                 ; convert to ascii value
-        mov [eax], dl                               ; put char value in pop_buffer
-        dec eax
-        inc esi
-        cmp dword [esi], 0                          ; if next link is null
-        jnz .233link                                ; jump to next possible type of link
-        ;add edx, 48
-        ;mov [eax], dl                               ; put char value in pop_buffer
-        jmp .print_number
+            mov dl, byte [esi]                          ; edx <- data of curr link
+            and edx, 224
+            shr edx, 5
+            add edx, 48                                 ; convert to ascii value
+            mov [eax], dl                               ; put char value in pop_buffer
+            dec eax
+            inc esi
+            cmp dword [esi], 0                          ; if next link is null
+            jnz .233link                                ; jump to next possible type of link
+            ;add edx, 48
+            ;mov [eax], dl                               ; put char value in pop_buffer
+            jmp .print_number
 
-    .print_number:
-        inc eax
-        .clean_zeros_loop:
-            cmp byte [eax], 48                      ; check if curr char is '0'
-            jnz .end
+        .print_number:
             inc eax
-            jmp .clean_zeros_loop
+            .clean_zeros_loop:
+                cmp byte [eax], 48                      ; check if curr char is '0'
+                jnz .end
+                inc eax
+                jmp .clean_zeros_loop
                 
-        .end:
-            cmp byte [eax], 0
-            jz .recreate_zero
-                
-        .recreate_zero:
-            mov byte [eax], 48
-            jmp .end_continue
+            .end:
+                cmp byte [eax], 0
+                jz .recreate_zero
+                jmp .end_continue
 
-        .end_continue:
-            printing %1, format_string, eax
+            .recreate_zero:
+                mov byte [eax], 48
+                
+            .end_continue:
+                printing %1, format_string, eax
+                
+
 %endmacro
 
 section .data                                               ; we define (global) initialized variables in .data section
@@ -521,135 +523,17 @@ main:
         case_popAndPrint:
             cmp dword [num_of_elements], 0
             jz stack_underflow
-            mov esi, ecx                                    ; set esi to hold adress of first link
-            sub esi, 4
-            mov eax, pop_buffer+79                          ; go the last char of pop_buffer
-            mov byte [eax], 0                               ; put null-terminator in the end of the buffer
-            dec eax
+            print_operand stdout
+            inc dword [operator_counter]
+            dec dword [num_of_elements]
+            inc dword [stack_size]
 
-            .233link:
-                mov dword esi, [esi]                        ; set ecx to point to start of first/next link
-                mov dl, byte [esi]                          ; edx <- data of curr link
-                and edx, 7                                  ; take last 3 bits of data
-                add edx, 48                                 ; convert to ascii value
-                mov [eax], dl                               ; put char value in pop_buffer
-                sub eax, 1
-
-                mov dl, byte [esi]                          ; edx <- data of curr link
-                and edx, 56                                 ; take next 3 bits of data
-                shr edx, 3                                  ; move the bits to right end of edx
-                add edx, 48                                 ; convert to ascii value
-                mov [eax], dl                               ; put char value in pop_buffer
-                dec eax
-
-                mov dl, byte [esi]                          ; edx <- data of curr link
-                and edx, 192
-                shr edx, 6
-                inc esi                                     ; set esi to point address of next link
-                cmp dword [esi], 0                          ; if next link is null
-                jnz .1331link                               ; jump to next possible type of link
-
-                add edx, 48                                 ; convert to ascii value
-                mov [eax], dl                               ; put char value in pop_buffer
-                jmp .print_number                           ; print the number
+            push dword [ecx-4]                      ; free operand
+            call free_operand
+            add esp, 4                              ; cleanup stack
+            sub ecx, 4                              ; ecx now points to next available space in stack  
             
-            .1331link:
-                mov dword esi, [esi]                        ; set ecx to point to start of next link
-                mov ebx, edx                                ; put aside bits we pulled from prev link
-                mov edx, [esi]                              ; edx <- data of curr link
-                and edx, 1                                  ; take last bit of data
-                shl edx, 2
-                or edx, ebx                                 ; combine with bits from prev link
-                add edx, 48                                 ; convert to ascii value
-                mov [eax], dl                               ; put char value in pop_buffer
-                dec eax
-
-                mov dl, byte [esi]                          ; edx <- data of curr link
-                and edx, 14                                 ; take next 3 bits of data
-                shr edx, 1                                  ; move the bits to right end of edx
-                add edx, 48                                 ; convert to ascii value
-                mov [eax], dl                               ; put char value in pop_buffer
-                dec eax
-                
-                mov dl, byte [esi]                          ; edx <- data of curr link
-                and edx, 112                                ; take next 3 bits of data
-                shr edx, 4                                  ; move the bits to right end of edx
-                add edx, 48                                 ; convert to ascii value
-                mov [eax], dl                               ; put char value in pop_buffer
-                dec eax
-
-                mov dl, byte [esi]                          ; edx <- data of curr link
-                and edx, 128
-                shr edx, 7
-                inc esi
-                cmp dword [esi], 0                          ; if next link is null
-                jnz .332link                                ; jump to next possible type of link
-                
-                add edx, 48
-                mov [eax], dl                               ; put char value in pop_buffer
-                jmp .print_number
-
-            
-            .332link:
-                mov dword esi, [esi]                        ; set ecx to point to start of next link
-                mov ebx, edx                                ; put aside bits we pulled from prev link
-                mov edx, [esi]                              ; edx <- data of curr link
-                and edx, 3                                  ; take last 2 bits of data
-                shl edx, 1
-                or edx, ebx                                ; combine with bits from prev link
-                add edx, 48                                 ; convert to ascii value
-                mov [eax], dl                               ; put char value in pop_buffer
-                dec eax
-
-                mov dl, byte [esi]                          ; edx <- data of curr link
-                and edx, 28                                 ; take next 3 bits of data
-                shr edx, 2                                  ; move the bits to right end of edx
-                add edx, 48                                 ; convert to ascii value
-                mov [eax], dl                               ; put char value in pop_buffer
-                dec eax
-
-                mov dl, byte [esi]                          ; edx <- data of curr link
-                and edx, 224
-                shr edx, 5
-                add edx, 48                                 ; convert to ascii value
-                mov [eax], dl                               ; put char value in pop_buffer
-                dec eax
-                inc esi
-                cmp dword [esi], 0                          ; if next link is null
-                jnz .233link                                ; jump to next possible type of link
-                ;add edx, 48
-                ;mov [eax], dl                               ; put char value in pop_buffer
-                jmp .print_number
-
-            .print_number:
-                inc eax
-                .clean_zeros_loop:
-                    cmp byte [eax], 48                      ; check if curr char is '0'
-                    jnz .end
-                    inc eax
-                    jmp .clean_zeros_loop
-                
-                .end:
-                    cmp byte [eax], 0
-                    jz .recreate_zero
-                
-                .end_continue:
-                    printing stdout, format_string, eax
-                    inc dword [operator_counter]
-                    dec dword [num_of_elements]
-                    inc dword [stack_size]
-
-                    push dword [ecx-4]                      ; free operand
-                    call free_operand
-                    add esp, 4                              ; cleanup stack
-                    sub ecx, 4                              ; ecx now points to next available space in stack  
-            
-                    jmp start_loop
-                
-                .recreate_zero:
-                    mov byte [eax], 48
-                    jmp .end_continue
-            
+            jmp start_loop
                     
                             
 
@@ -859,8 +743,10 @@ addLink:
             jmp .return
 
     .stack_overflow:
+        popad
+        pop ebp
+        add esp, 8
         printing stderr, format_string, overflow_string
-        add esp, 4
         jmp start_loop
 
     .return_first_link:
@@ -904,4 +790,5 @@ debug_print_input:
     ret  
 
 debug_print_result:
+    print_operand stderr
     ret  
