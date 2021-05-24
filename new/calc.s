@@ -508,6 +508,8 @@ main:
                 sub ecx, 8                                  ; ecx = stack address of first operand
                 mov [ecx], eax                              ; replace first operand address with new link
                 add ecx, 4                                  ; set next free space in stack
+                mov byte [op1F], 1
+                mov byte [op2F], 1
                 
                 cmp byte [debug_flag], 1
                 jne .end2
